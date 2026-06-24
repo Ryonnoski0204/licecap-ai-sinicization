@@ -496,26 +496,40 @@ static void GetViewRectSize(int *w, int *h)
 
 void UpdateDimBoxes(HWND hwndDlg)
 {
-  ShowWindow(GetDlgItem(hwndDlg, IDC_STATUS), (g_cap_state ? SW_SHOWNA : SW_HIDE));
+  // 判断窄窗口: 中间的"录制到剪贴板"按钮右边已超过"录制"按钮左边 -> 常规按钮放不下
+  bool narrow = false;
   {
-    WDL_WndSizer__rec* rec=g_wndsize.get_item(IDC_REC);
-    if (rec && rec->last.left > 0)
-    {
-      int xmin=rec->last.left-4;     
-      static const unsigned short ids[] = { IDC_MAXFPS_LBL, IDC_MAXFPS, IDC_DIMLBL_1, IDC_XSZ, IDC_YSZ, IDC_DIMLBL, IDC_REC_CLIP };
-      int i;
-      for (i=0; i < sizeof(ids)/sizeof(ids[0]); ++i)
-      {
-        WDL_WndSizer__rec* rec=g_wndsize.get_item(ids[i]);
-        if (rec) 
-        {
-          int show = (rec->last.right > xmin || g_cap_state) ? SW_HIDE : SW_SHOWNA;
-          HWND h = GetDlgItem(hwndDlg, ids[i]);
-          if (h) ShowWindow(h, show);
-        }
-      }
-    }
+    WDL_WndSizer__rec* recRec = g_wndsize.get_item(IDC_REC);
+    WDL_WndSizer__rec* recClip = g_wndsize.get_item(IDC_REC_CLIP);
+    if (recRec && recClip && recRec->last.left > 0 && recClip->last.right > recRec->last.left - 4)
+      narrow = true;
   }
+
+#ifdef _WIN32
+  // 窄窗口: 只显示 ☰ 控制按钮
+  { HWND h = GetDlgItem(hwndDlg, IDC_CTRL); if (h) ShowWindow(h, narrow ? SW_SHOWNA : SW_HIDE); }
+#endif
+
+  // 状态栏: 录制中(非暂停) 且 非窄
+  ShowWindow(GetDlgItem(hwndDlg, IDC_STATUS), (g_cap_state==1 && !narrow) ? SW_SHOWNA : SW_HIDE);
+
+  // 帧率/尺寸输入框 + 录制到剪贴板: 停止状态 且 非窄
+  {
+    static const unsigned short ids[] = { IDC_MAXFPS_LBL, IDC_MAXFPS, IDC_DIMLBL_1, IDC_XSZ, IDC_YSZ, IDC_DIMLBL, IDC_REC_CLIP };
+    const int show = (!g_cap_state && !narrow) ? SW_SHOWNA : SW_HIDE;
+    for (int i=0; i < (int)(sizeof(ids)/sizeof(ids[0])); ++i)
+    { HWND h = GetDlgItem(hwndDlg, ids[i]); if (h) ShowWindow(h, show); }
+  }
+
+  // 录制/停止按钮: 非窄即显示
+  {
+    const int show = narrow ? SW_HIDE : SW_SHOWNA;
+    ShowWindow(GetDlgItem(hwndDlg, IDC_REC), show);
+    ShowWindow(GetDlgItem(hwndDlg, IDC_STOP), show);
+  }
+
+  // 插入文本帧按钮: 暂停状态 且 非窄
+  ShowWindow(GetDlgItem(hwndDlg, IDC_INSERT), (g_cap_state==2 && !narrow) ? SW_SHOWNA : SW_HIDE);
 
   if (!g_cap_state)
   {
@@ -1205,6 +1219,7 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
       g_wndsize.init_item(IDC_STOP,1,1,1,1);
       g_wndsize.init_item(IDC_INSERT,1,1,1,1);
       g_wndsize.init_item(IDC_REC_CLIP,0,1,0,1);
+      g_wndsize.init_item(IDC_CTRL,1,1,1,1);
       
       ShowWindow(GetDlgItem(hwndDlg, IDC_INSERT), SW_HIDE);
       SendMessage(hwndDlg,WM_SIZE,0,0);
@@ -1571,6 +1586,15 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
           }
         break;
 
+#ifdef _WIN32
+        case IDC_CTRL: // ☰ 控制按钮(左键) -> 弹出录制控制菜单
+          {
+            RECT r;
+            GetWindowRect(GetDlgItem(hwndDlg, IDC_CTRL), &r);
+            ShowRecordContextMenu(hwndDlg, r.left, r.bottom);
+          }
+        break;
+#endif
         case IDC_STOP:
           ShowWindow(GetDlgItem(hwndDlg, IDC_INSERT), SW_HIDE);
           g_insert_cnt=0;
@@ -1825,6 +1849,7 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             g_cap_state=2;
             UpdateCaption(hwndDlg);
             UpdateStatusText(hwndDlg);
+            UpdateDimBoxes(hwndDlg);
           }
           else // unpause!
           {
@@ -1838,6 +1863,7 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             g_cap_state=1;
             UpdateCaption(hwndDlg);
             UpdateStatusText(hwndDlg);
+            UpdateDimBoxes(hwndDlg);
           }
 
         break;
@@ -2008,11 +2034,13 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             }
         }
         break;
-    case WM_NCRBUTTONUP: // 右键标题栏/取景框 -> 弹出录制控制菜单
-        if (wParam == HTCAPTION)
+    case WM_CONTEXTMENU: // 右键 ☰ 控制按钮 -> 弹出录制控制菜单
+        if ((HWND)wParam == GetDlgItem(hwndDlg, IDC_CTRL))
         {
-            ShowRecordContextMenu(hwndDlg, (short)LOWORD(lParam), (short)HIWORD(lParam));
-            return 1; // 已处理, 阻止默认系统菜单
+            RECT r;
+            GetWindowRect(GetDlgItem(hwndDlg, IDC_CTRL), &r);
+            ShowRecordContextMenu(hwndDlg, r.left, r.bottom);
+            return 1;
         }
         break;
 #endif

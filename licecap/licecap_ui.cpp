@@ -23,6 +23,7 @@
 #include <windows.h>
 #include <process.h>
 #include <multimon.h>
+#include <shellapi.h>
 #else
 #include "../WDL/swell/swell.h"
 #endif
@@ -185,6 +186,7 @@ int g_gif_loopcount=0;
 int g_max_fps=8;  
 
 char g_last_fn[2048];
+bool g_clipboard_mode=false; // "录制到剪贴板"模式标志
 WDL_String g_ini_file;
 
 HWND g_hwnd;
@@ -499,7 +501,7 @@ void UpdateDimBoxes(HWND hwndDlg)
     if (rec && rec->last.left > 0)
     {
       int xmin=rec->last.left-4;     
-      static const unsigned short ids[] = { IDC_MAXFPS_LBL, IDC_MAXFPS, IDC_DIMLBL_1, IDC_XSZ, IDC_YSZ, IDC_DIMLBL };
+      static const unsigned short ids[] = { IDC_MAXFPS_LBL, IDC_MAXFPS, IDC_DIMLBL_1, IDC_XSZ, IDC_YSZ, IDC_DIMLBL, IDC_REC_CLIP };
       int i;
       for (i=0; i < sizeof(ids)/sizeof(ids[0]); ++i)
       {
@@ -659,6 +661,51 @@ void SaveRestoreRecRect(HWND hwndDlg, bool restore)
 }
 void SWELL_SetWindowResizeable(HWND, bool);
 
+#ifdef _WIN32
+// 生成剪贴板录制用的临时 .gif 路径: %TEMP%\LICEcap\clip_<时间戳>.gif (UTF-8 返回)
+static bool MakeClipboardTempPath(char *out, int outsz)
+{
+  WCHAR tmpW[MAX_PATH];
+  DWORD n = GetTempPathW(MAX_PATH, tmpW);
+  if (!n || n >= MAX_PATH-16) return false;
+  wcscat(tmpW, L"LICEcap");
+  CreateDirectoryW(tmpW, NULL);
+  WCHAR fnW[MAX_PATH];
+  wsprintfW(fnW, L"%s\\clip_%u.gif", tmpW, (unsigned)timeGetTime());
+  if (!WideCharToMultiByte(CP_UTF8,0,fnW,-1,out,outsz,NULL,NULL)) return false;
+  return true;
+}
+
+// 把磁盘上的文件以 CF_HDROP (复制文件) 形式放入剪贴板, 使其可粘贴到 QQ/微信等(动图保留)
+static bool CopyGifToClipboard(HWND hwnd, const char *utf8path)
+{
+  WCHAR wpath[MAX_PATH*2];
+  if (!MultiByteToWideChar(CP_UTF8,0,utf8path,-1,wpath,MAX_PATH*2)) return false;
+  const int wlen = (int)wcslen(wpath);
+  const SIZE_T bytes = sizeof(DROPFILES) + (SIZE_T)(wlen+2)*sizeof(WCHAR);
+  HGLOBAL hg = GlobalAlloc(GHND, bytes);
+  if (!hg) return false;
+  DROPFILES *df = (DROPFILES*)GlobalLock(hg);
+  if (!df) { GlobalFree(hg); return false; }
+  df->pFiles = sizeof(DROPFILES);
+  df->fWide = TRUE;
+  WCHAR *p = (WCHAR*)((BYTE*)df + sizeof(DROPFILES));
+  memcpy(p, wpath, (size_t)(wlen+1)*sizeof(WCHAR));
+  // 文件列表以双 null 结尾 (GHND 已清零内存, 末尾 WCHAR 已是 0)
+  GlobalUnlock(hg);
+  if (!OpenClipboard(hwnd)) { GlobalFree(hg); return false; }
+  EmptyClipboard();
+  if (!SetClipboardData(CF_HDROP, hg))
+  {
+    CloseClipboard();
+    GlobalFree(hg);
+    return false;
+  }
+  CloseClipboard(); // 成功后所有权移交剪贴板, 不可再 free
+  return true;
+}
+#endif
+
 void Capture_Finish(HWND hwndDlg)
 {
   SetDlgItemText(hwndDlg,IDC_REC,"录制...");
@@ -717,6 +764,19 @@ void Capture_Finish(HWND hwndDlg)
     delete g_cap_gif;
     g_cap_gif=0;
   }
+
+#ifdef _WIN32
+  if (g_clipboard_mode)
+  {
+    // 此时 g_cap_gif 已删除, .gif 文件已写完整, 可放入剪贴板
+    const bool ok = CopyGifToClipboard(hwndDlg, g_last_fn);
+    g_clipboard_mode = false;
+    MessageBox(hwndDlg,
+      ok ? "已复制到剪贴板, 现在可以到 QQ、微信等聊天框直接粘贴(Ctrl+V)。"
+         : "复制到剪贴板失败。",
+      "录制到剪贴板", MB_OK | (ok ? MB_ICONINFORMATION : MB_ICONWARNING));
+  }
+#endif
 
 #ifdef TEST_MULTIPLE_MODES
   delete g_cap_gif2;
@@ -1114,6 +1174,7 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
       g_wndsize.init_item(IDC_REC,1,1,1,1);
       g_wndsize.init_item(IDC_STOP,1,1,1,1);
       g_wndsize.init_item(IDC_INSERT,1,1,1,1);
+      g_wndsize.init_item(IDC_REC_CLIP,0,1,0,1);
       
       ShowWindow(GetDlgItem(hwndDlg, IDC_INSERT), SW_HIDE);
       SendMessage(hwndDlg,WM_SIZE,0,0);
@@ -1511,6 +1572,7 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 
           if (!g_cap_state)
           {
+            g_clipboard_mode = false;
             //g_title[0]=0;
             const char *tab[][2]={
               { "GIF 文件 (*.gif)\0*.gif\0", ".gif" },
@@ -1709,7 +1771,7 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 #endif
 #endif
 
-                SetDlgItemText(hwndDlg,IDC_REC,"[pause]");
+                SetDlgItemText(hwndDlg,IDC_REC,"[暂停]");
                 EnableWindow(GetDlgItem(hwndDlg,IDC_STOP),1);
 
                 g_frate_valid=false;
@@ -1729,7 +1791,7 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             g_pause_time = timeGetTime();
             ShowWindow(GetDlgItem(hwndDlg, IDC_INSERT), SW_SHOWNA);
             ShowWindow(GetDlgItem(hwndDlg,IDC_STATUS),SW_HIDE);
-            SetDlgItemText(hwndDlg,IDC_REC,"[unpause]");
+            SetDlgItemText(hwndDlg,IDC_REC,"[继续]");
             g_cap_state=2;
             UpdateCaption(hwndDlg);
             UpdateStatusText(hwndDlg);
@@ -1741,7 +1803,7 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             g_insert_cnt=0;
             ShowWindow(GetDlgItem(hwndDlg,IDC_STATUS),SW_SHOWNA);
             ShowWindow(GetDlgItem(hwndDlg, IDC_INSERT), SW_HIDE);
-            SetDlgItemText(hwndDlg,IDC_REC,"[pause]");
+            SetDlgItemText(hwndDlg,IDC_REC,"[暂停]");
             g_last_frame_capture_time = g_cap_prerolluntil=timeGetTime()+PREROLL_AMT;
             g_cap_state=1;
             UpdateCaption(hwndDlg);
@@ -1749,6 +1811,63 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
           }
 
         break;
+
+#ifdef _WIN32
+        case IDC_REC_CLIP:
+          // 录制到剪贴板: 跳过保存对话框, 录到临时 .gif, 停止后自动放入剪贴板
+          if (!g_cap_state)
+          {
+            if (MakeClipboardTempPath(g_last_fn, sizeof(g_last_fn)))
+            {
+              g_clipboard_mode = true;
+
+              if (g_prefs&16)
+                RegisterHotKey(hwndDlg, IDC_REC, MOD_CONTROL|MOD_ALT, 'P');
+
+              int w,h;
+              GetViewRectSize(&w,&h);
+
+              delete g_cap_bm;
+              g_cap_bm = LICE_CreateSysBitmap(w,h);
+
+              g_dotitle = ((g_prefs&1) && g_titlems);
+
+              void *ctx = LICE_WriteGIFBeginNoFrame(g_last_fn,w,h,(g_prefs&32) ? (-1)&~7 : 0,true);
+              if (ctx) g_cap_gif = new gif_encoder(ctx,g_gif_loopcount,0xf8);
+              g_cap_gif_lastsec_written = -1;
+
+              if (g_cap_gif)
+              {
+                if (g_dotitle)
+                  WriteTextFrame(g_title,g_titlems,true,w,h);
+
+                SaveRestoreRecRect(hwndDlg,false);
+                g_last_wndstyle = SetWindowLong(hwndDlg,GWL_STYLE,GetWindowLong(hwndDlg,GWL_STYLE)&~WS_THICKFRAME);
+                SetWindowPos(hwndDlg,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_DRAWFRAME|SWP_NOACTIVATE);
+                SaveRestoreRecRect(hwndDlg,true);
+
+                SetDlgItemText(hwndDlg,IDC_REC,"[暂停]");
+                EnableWindow(GetDlgItem(hwndDlg,IDC_STOP),1);
+
+                g_frate_valid=false;
+                g_frate_avg=0.0;
+                g_ms_written = 0;
+
+                g_last_frame_capture_time = g_cap_prerolluntil = timeGetTime()+PREROLL_AMT;
+                g_cap_state=1;
+                UpdateCaption(hwndDlg);
+                UpdateStatusText(hwndDlg);
+                UpdateDimBoxes(hwndDlg);
+              }
+              else
+              {
+                g_clipboard_mode = false;
+              }
+            }
+          }
+        break;
+#endif
+
 #ifndef _WIN32
         case IDCANCEL:
           SendMessage(hwndDlg,WM_CLOSE,0,0);

@@ -2,7 +2,7 @@ name: 构建 Windows 汉化版
 
 on:
   push:
-    branches: [ main, chinese-localization ]
+    branches: [ '**' ]
   workflow_dispatch:
 
 jobs:

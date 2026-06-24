@@ -73,6 +73,12 @@
 #include "../WDL/wingui/wndsize.h"
 #include "../WDL/wdlstring.h"
 
+#ifdef _WIN32
+// 汉化: 引入 win32_utf8 重定向, 使运行时 SetWindowText/SetDlgItemText/GetDlgItemText
+// 等按 UTF-8 处理中文; 否则 UTF-8 字节会被当作 ANSI(GBK) 直接显示为乱码。
+#include "../WDL/win32_utf8.h"
+#endif
+
 
 #include "licecap_version.h"
 

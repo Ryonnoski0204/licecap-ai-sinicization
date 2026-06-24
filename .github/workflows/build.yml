@@ -1,0 +1,45 @@
+name: 构建 Windows 汉化版
+
+on:
+  push:
+    branches: [ main, chinese-localization ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: 编译 LICEcap (Release|Win32)
+        shell: cmd
+        run: msbuild licecap\licecap\licecap.sln /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143 /m
+
+      - name: 准备安装包所需文件
+        shell: cmd
+        run: |
+          if not exist licecap\release mkdir licecap\release
+          copy /Y licecap\licecap\Release_new\licecap.exe licecap\release\LICEcap.exe
+
+      - name: 安装 NSIS
+        shell: pwsh
+        run: choco install nsis -y --no-progress
+
+      - name: 打包安装程序
+        shell: cmd
+        working-directory: licecap
+        run: '"C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi'
+
+      - name: 上传产物(安装包与可执行文件)
+        uses: actions/upload-artifact@v4
+        with:
+          name: licecap-chinese
+          path: |
+            licecap\licecap*-install.exe
+            licecap\release\LICEcap.exe
+          if-no-files-found: error

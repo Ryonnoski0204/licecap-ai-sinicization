@@ -1,5 +1,6 @@
-;Include Modern UI
+﻿;Include Modern UI
 
+Unicode true
 
 !define MUI_COMPONENTSPAGE_NODESC
 
@@ -15,12 +16,12 @@ SetCompressor lzma
 
 
   ;Name and file
-  Name "LICEcap v${VER_MAJOR}.${VER_MINOR}"
+  Name "LICEcap v${VER_MAJOR}.${VER_MINOR} 汉化版"
   OutFile "licecap${VER_MAJOR}${VER_MINOR}-install.exe"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\LICEcap"
-  
+
   ;Get installation folder from registry if available
   InstallDirRegKey HKLM "Software\LICEcap" ""
 
@@ -36,14 +37,14 @@ SetCompressor lzma
   !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
-  
+
   !insertmacro MUI_UNPAGE_CONFIRM
   !insertmacro MUI_UNPAGE_INSTFILES
-  
+
 ;--------------------------------
 ;Languages
- 
-  !insertmacro MUI_LANGUAGE "English"
+
+  !insertmacro MUI_LANGUAGE "SimpChinese"
 
 
 
@@ -52,7 +53,7 @@ SetCompressor lzma
 ;Installer Sections
 
 
-Section "Required files"
+Section "必需文件"
 
   SectionIn RO
   SetOutPath "$INSTDIR"
@@ -60,10 +61,10 @@ Section "Required files"
 
   File release\LICEcap.exe
 ;  File release\LICEcap_cli.exe
-    
+
   ;Store installation folder
   WriteRegStr HKLM "Software\LICEcap" "" $INSTDIR
-  
+
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
@@ -72,60 +73,21 @@ Section "Required files"
 
 SectionEnd
 
-Section "Desktop Icon"
+Section "桌面快捷方式"
   CreateShortcut "$DESKTOP\LICEcap.lnk" "$INSTDIR\LICEcap.exe"
 SectionEnd
 
-Section "Start Menu Shortcuts"
+Section "开始菜单快捷方式"
 
   SetOutPath $SMPROGRAMS\LICEcap
   CreateShortcut "$OUTDIR\LICEcap.lnk" "$INSTDIR\LICEcap.exe"
-  CreateShortcut "$OUTDIR\LICEcap License.lnk" "$INSTDIR\license.txt"
-  CreateShortcut "$OUTDIR\Whatsnew.txt.lnk" "$INSTDIR\whatsnew.txt"
-  CreateShortcut "$OUTDIR\Uninstall LICEcap.lnk" "$INSTDIR\uninstall.exe"
+  CreateShortcut "$OUTDIR\LICEcap 许可证.lnk" "$INSTDIR\license.txt"
+  CreateShortcut "$OUTDIR\更新说明.lnk" "$INSTDIR\whatsnew.txt"
+  CreateShortcut "$OUTDIR\卸载 LICEcap.lnk" "$INSTDIR\uninstall.exe"
 
   SetOutPath $INSTDIR
 
 SectionEnd
-
-;Section "LICEcap Source Code"
-;  SetOutPath $INSTDIR\Source
-;  File requires_wdl.txt
-;
-;  SetOutPath $INSTDIR\Source\licecap
-;  File installer.nsi
-;  File license.txt
-;  File licecap.dsw
-;  File licecap_cli.dsp
-;  File licecap_gui.dsp
-;  File icon1.ico
-;  File licecap.rc
-;  File resource.h
-;  File licecap_version.h
-;  File licecap_cli.cpp
-;  File licecap_ui.cpp
-;  File requires_wdl.txt
-;  File whatsnew.txt
-;  
-;  File licecap.icns
-;  File capturewindow.mm
-;
-;  File licecap-Info.plist
-;  File main.m
-;  File licecap_Prefix.pch
-;  File makedmg.sh
-;  File pkg-dmg
-;  File stage_DS_Store
-;  File background.png
-;
-;  File /r English.lproj
-;
-;  SetOutPath $INSTDIR\Source\licecap\licecap.xcodeproj
-;  File licecap.xcodeproj\project.pbxproj
-;
-;SectionEnd
-;
-
 
 ;--------------------------------
 ;Uninstaller Section
@@ -144,42 +106,6 @@ Section "Uninstall"
   RMDir $SMPROGRAMS\LICEcap
   Delete "$DESKTOP\LICEcap.lnk"
 
-  Delete $INSTDIR\Source\LICEcap\installer.nsi
-  Delete $INSTDIR\Source\LICEcap\license.txt
-  Delete $INSTDIR\Source\LICEcap\whatsnew.txt
-  Delete $INSTDIR\Source\LICEcap\licecap.dsw
-  Delete $INSTDIR\Source\LICEcap\licecap_cli.dsp
-  Delete $INSTDIR\Source\LICEcap\licecap_gui.dsp
-  Delete $INSTDIR\Source\LICEcap\icon1.ico
-  Delete $INSTDIR\Source\LICEcap\licecap.rc
-  Delete $INSTDIR\Source\LICEcap\resource.h
-  Delete $INSTDIR\Source\LICEcap\licecap_version.h
-  Delete $INSTDIR\Source\LICEcap\licecap_cli.cpp
-  Delete $INSTDIR\Source\LICEcap\background.png
-  Delete $INSTDIR\Source\LICEcap\licecap_ui.cpp
-  Delete $INSTDIR\Source\LICEcap\requires_wdl.txt
-  Delete $INSTDIR\Source\requires_wdl.txt
-
-  Delete $INSTDIR\Source\licecap.icns
-  Delete $INSTDIR\Source\capturewindow.mm
-
-  Delete $INSTDIR\Source\makedmg.sh
-  Delete $INSTDIR\Source\pkg-dmg
-  Delete $INSTDIR\Source\stage_DS_Store
-
-  Delete $INSTDIR\Source\licecap-Info.plist
-  Delete $INSTDIR\Source\main.m
-  Delete $INSTDIR\Source\licecap_Prefix.pch
-
-  Delete "$INSTDIR\English.lproj\*.*"
-  Delete "$INSTDIR\Source\licecap\licecap.xcodeproj\*.*"
-
-  RMDir $INSTDIR\English.lproj
-  RMDir  "$INSTDIR\Source\licecap\licecap.xcodeproj"
-
-  RMDir $INSTDIR\Source\LICEcap
-  RMDir $INSTDIR\Source
-  
   RMDir "$INSTDIR"
 
 SectionEnd

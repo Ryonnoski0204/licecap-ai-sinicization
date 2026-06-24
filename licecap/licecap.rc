@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+﻿//Microsoft Developer Studio generated resource script.
 //
 #include "resource.h"
 
@@ -13,12 +13,12 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// Chinese (Simplified, PRC) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 #ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(65001)
 #endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
@@ -29,17 +29,17 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 IDD_DIALOG1 DIALOG DISCARDABLE  0, 0, 551, 335
 STYLE WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 CAPTION "LICEcap"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
-    PUSHBUTTON      "Insert...",IDC_INSERT,430,320,41,12
-    PUSHBUTTON      "Record...",IDC_REC,474,320,41,12
-    PUSHBUTTON      "Stop",IDC_STOP,517,320,30,12
-    LTEXT           "Max FPS:",IDC_MAXFPS_LBL,4,322,32,8
-    EDITTEXT        IDC_MAXFPS,37,320,17,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Size:",IDC_DIMLBL_1,61,322,16,8
-    EDITTEXT        IDC_XSZ,80,320,21,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "x",IDC_DIMLBL,103,322,8,8
-    EDITTEXT        IDC_YSZ,110,320,21,12,ES_AUTOHSCROLL | ES_NUMBER
+    PUSHBUTTON      "插入...",IDC_INSERT,430,320,41,12
+    PUSHBUTTON      "录制...",IDC_REC,474,320,41,12
+    PUSHBUTTON      "停止",IDC_STOP,517,320,30,12
+    LTEXT           "最大帧率:",IDC_MAXFPS_LBL,4,322,38,8
+    EDITTEXT        IDC_MAXFPS,44,320,17,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "尺寸:",IDC_DIMLBL_1,68,322,22,8
+    EDITTEXT        IDC_XSZ,92,320,21,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "x",IDC_DIMLBL,115,322,8,8
+    EDITTEXT        IDC_YSZ,123,320,21,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Status (i.e. 640x480 x fps 3:21 etc)",IDC_STATUS,"Static",
                     SS_LEFTNOWORDWRAP | WS_GROUP,7,322,420,8
     CONTROL         "",IDC_VIEWRECT,"Static",SS_BLACKFRAME,4,4,543,314
@@ -48,61 +48,61 @@ END
 IDD_SAVEOPTS DIALOGEX 0, 0, 317, 93
 STYLE DS_CONTROL | WS_CHILD | WS_CLIPSIBLINGS
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "Display in animation",IDC_STATIC,0,4,99,51
-    CONTROL         "title frame:",IDC_TITLEUSE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,6,18,45,10
-    EDITTEXT        IDC_MS,54,16,26,13,ES_AUTOHSCROLL
-    LTEXT           "sec",IDC_STATIC,82,18,14,8
-    CONTROL         "elapsed time",IDC_TIMELINE,"Button",BS_AUTOCHECKBOX | 
+    GROUPBOX        "在动画中显示",IDC_STATIC,0,4,99,51
+    CONTROL         "标题帧:",IDC_TITLEUSE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,6,18,50,10
+    EDITTEXT        IDC_MS,58,16,22,13,ES_AUTOHSCROLL
+    LTEXT           "秒",IDC_STATIC,82,18,14,8
+    CONTROL         "已用时间",IDC_TIMELINE,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,6,31,76,10
-    CONTROL         "mouse button press",IDC_MOUSECAP,"Button",
+    CONTROL         "鼠标点击",IDC_MOUSECAP,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,6,43,75,10
     EDITTEXT        IDC_TITLE,105,8,208,36,ES_MULTILINE | ES_WANTRETURN
-    CONTROL         "Big font",IDC_BIGFONT,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "大字体",IDC_BIGFONT,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,275,46,37,10
-    PUSHBUTTON      "WEBM options...",IDC_BUTTON1,238,77,75,14
-    CONTROL         "Control+Alt+P pauses recording",IDC_SSPAUSE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,105,46,115,10
-    LTEXT           ".GIF repeat count (0=infinite):",IDC_STATIC,0,63,92,8
+    PUSHBUTTON      "WEBM 选项...",IDC_BUTTON1,238,77,75,14
+    CONTROL         "Control+Alt+P 暂停录制",IDC_SSPAUSE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,105,46,130,10
+    LTEXT           ".GIF 循环次数(0=无限):",IDC_STATIC,0,63,92,8
     EDITTEXT        IDC_LOOPCNT,94,61,34,13,ES_AUTOHSCROLL
-    CONTROL         "Use .GIF transparency for smaller files",IDC_CHECK1,
+    CONTROL         "使用 .GIF 透明以减小文件",IDC_CHECK1,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,132,62,134,10
-    CONTROL         "Automatically stop after",IDC_CHECK2,"Button",
+    CONTROL         "自动停止于",IDC_CHECK2,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,2,78,87,10
     EDITTEXT        IDC_STOPAFTER_SEC,92,77,26,13,ES_AUTOHSCROLL
-    LTEXT           "seconds",IDC_STOPAFTER_SEC_LBL,120,79,28,8
+    LTEXT           "秒",IDC_STOPAFTER_SEC_LBL,120,79,28,8
 END
 
 IDD_INSERT DIALOGEX 0, 0, 281, 122
 STYLE WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
-CAPTION "Insert text frame"
+CAPTION "插入文本帧"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    EDITTEXT        IDC_EDIT,5,5,270,96,ES_MULTILINE | ES_AUTOVSCROLL | 
+    EDITTEXT        IDC_EDIT,5,5,270,96,ES_MULTILINE | ES_AUTOVSCROLL |
                     ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL
-    LTEXT           "Duration:",IDC_STATIC,5,108,32,8
+    LTEXT           "时长:",IDC_STATIC,5,108,32,8
     EDITTEXT        IDC_MS,39,106,27,12,ES_AUTOHSCROLL
-    LTEXT           "Alpha:",IDC_STATIC,80,108,25,8
-    EDITTEXT        IDC_ALPHA,105,106,27,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "Insert (0)",IDOK,190,106,41,12
-    PUSHBUTTON      "Close",IDCANCEL,235,106,41,12
+    LTEXT           "透明度:",IDC_STATIC,80,108,30,8
+    EDITTEXT        IDC_ALPHA,112,106,27,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "插入 (0)",IDOK,190,106,41,12
+    PUSHBUTTON      "关闭",IDCANCEL,235,106,41,12
 END
 
 IDD_OPTIONS DIALOG DISCARDABLE  0, 0, 317, 78
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "WEBM options"
-FONT 8, "MS Sans Serif"
+CAPTION "WEBM 选项"
+FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "WEBM options",IDC_STATIC,4,4,309,51
-    LTEXT           "Video bitrate:",IDC_STATIC,8,17,42,8
-    LTEXT           "Audio bitrate:",IDC_STATIC,8,32,42,8
+    GROUPBOX        "WEBM 选项",IDC_STATIC,4,4,309,51
+    LTEXT           "视频码率:",IDC_STATIC,8,17,42,8
+    LTEXT           "音频码率:",IDC_STATIC,8,32,42,8
     EDITTEXT        IDC_EDIT1,51,15,34,13,ES_AUTOHSCROLL
     EDITTEXT        IDC_EDIT2,51,30,34,13,ES_AUTOHSCROLL
     LTEXT           "kbps",IDC_STATIC,87,17,16,8
     LTEXT           "kbps",IDC_STATIC,87,32,16,8
-    PUSHBUTTON      "Ok",IDOK,263,59,50,14
+    PUSHBUTTON      "确定",IDOK,263,59,50,14
 END
 
 
@@ -112,7 +112,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO DISCARDABLE
 BEGIN
     IDD_DIALOG1, DIALOG
     BEGIN
@@ -146,18 +146,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE DISCARDABLE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE DISCARDABLE
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE DISCARDABLE
 BEGIN
     "\r\n"
     "\0"
@@ -174,7 +174,7 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON1               ICON    DISCARDABLE     "icon1.ico"
-#endif    // English (U.S.) resources
+#endif    // Chinese (Simplified, PRC) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

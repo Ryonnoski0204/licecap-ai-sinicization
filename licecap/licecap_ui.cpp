@@ -503,6 +503,7 @@ void UpdateDimBoxes(HWND hwndDlg)
   // ☰ 控制按钮(最右, 右锚定)作为右边界基准
   WDL_WndSizer__rec* recCtrl = g_wndsize.get_item(IDC_CTRL);
   int leftmostRight = recCtrl ? recCtrl->last.left : 0x7fffffff;
+  const bool layoutValid = (recCtrl && recCtrl->last.right > 4); // 布局已就绪
 
   // 右组按钮(右锚定): 停止/录制 任意状态可见, 插入仅暂停; 左移到几乎出界(left<4)时隐藏
   {
@@ -513,7 +514,7 @@ void UpdateDimBoxes(HWND hwndDlg)
       HWND h = GetDlgItem(hwndDlg, rid[i]);
       if (!base[i]) { if (h) ShowWindow(h, SW_HIDE); continue; }
       WDL_WndSizer__rec* r = g_wndsize.get_item(rid[i]);
-      if (r && r->last.left > 0 && r->last.left < 4)
+      if (layoutValid && r && r->last.left < 4) // 左移到几乎/已出界(含负坐标)
       { anyHidden = true; if (h) ShowWindow(h, SW_HIDE); }
       else
       { if (h) ShowWindow(h, SW_SHOWNA); if (r && r->last.left < leftmostRight) leftmostRight = r->last.left; }
@@ -528,7 +529,7 @@ void UpdateDimBoxes(HWND hwndDlg)
       HWND h = GetDlgItem(hwndDlg, lid[i]);
       if (g_cap_state) { if (h) ShowWindow(h, SW_HIDE); continue; }
       WDL_WndSizer__rec* r = g_wndsize.get_item(lid[i]);
-      if (r && r->last.right > leftmostRight - 4)
+      if (layoutValid && r && r->last.right > leftmostRight - 4)
       { anyHidden = true; if (h) ShowWindow(h, SW_HIDE); }
       else { if (h) ShowWindow(h, SW_SHOWNA); }
     }

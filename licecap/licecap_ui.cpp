@@ -705,6 +705,35 @@ static bool CopyGifToClipboard(HWND hwnd, const char *utf8path)
   CloseClipboard(); // 成功后所有权移交剪贴板, 不可再 free
   return true;
 }
+
+// 右键菜单: 按录制状态弹出 录制/录制到剪贴板/暂停/继续/停止/退出
+static void ShowRecordContextMenu(HWND hwnd, int x, int y)
+{
+  const UINT CTXCMD_EXIT = 0xE001; // 自定义命令: 退出(不与 IDC_* 1001-1025 冲突)
+  HMENU m = CreatePopupMenu();
+  if (!m) return;
+  if (!g_cap_state)
+  {
+    InsertMenu(m, (UINT)-1, MF_BYPOSITION|MF_STRING, IDC_REC, "录制...");
+    InsertMenu(m, (UINT)-1, MF_BYPOSITION|MF_STRING, IDC_REC_CLIP, "录制到剪贴板");
+    InsertMenuW(m, (UINT)-1, MF_BYPOSITION|MF_SEPARATOR, 0, NULL);
+    InsertMenu(m, (UINT)-1, MF_BYPOSITION|MF_STRING, CTXCMD_EXIT, "退出 LICEcap");
+  }
+  else if (g_cap_state == 1)
+  {
+    InsertMenu(m, (UINT)-1, MF_BYPOSITION|MF_STRING, IDC_REC, "暂停");
+    InsertMenu(m, (UINT)-1, MF_BYPOSITION|MF_STRING, IDC_STOP, "停止");
+  }
+  else
+  {
+    InsertMenu(m, (UINT)-1, MF_BYPOSITION|MF_STRING, IDC_REC, "继续");
+    InsertMenu(m, (UINT)-1, MF_BYPOSITION|MF_STRING, IDC_STOP, "停止");
+  }
+  const int cmd = TrackPopupMenu(m, TPM_RETURNCMD|TPM_RIGHTBUTTON, x, y, 0, hwnd, NULL);
+  DestroyMenu(m);
+  if (cmd == (int)CTXCMD_EXIT) PostMessage(hwnd, WM_CLOSE, 0, 0);
+  else if (cmd) SendMessage(hwnd, WM_COMMAND, MAKEWPARAM(cmd, BN_CLICKED), 0);
+}
 #endif
 
 void Capture_Finish(HWND hwndDlg)
@@ -1977,6 +2006,13 @@ static WDL_DLGRET liceCapMainProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, HTCAPTION);
                 return 1;
             }
+        }
+        break;
+    case WM_NCRBUTTONUP: // 右键标题栏/取景框 -> 弹出录制控制菜单
+        if (wParam == HTCAPTION)
+        {
+            ShowRecordContextMenu(hwndDlg, (short)LOWORD(lParam), (short)HIWORD(lParam));
+            return 1; // 已处理, 阻止默认系统菜单
         }
         break;
 #endif

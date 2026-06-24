@@ -24,6 +24,7 @@
 #include <process.h>
 #include <multimon.h>
 #include <shellapi.h>
+#include <shlobj.h>
 #else
 #include "../WDL/swell/swell.h"
 #endif

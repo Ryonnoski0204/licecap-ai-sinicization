@@ -89,7 +89,7 @@
 HINSTANCE g_hInst;
 
 
-#define MIN_SIZE_X 160
+#define MIN_SIZE_X 96
 #define MIN_SIZE_Y 120
 
 
@@ -496,40 +496,49 @@ static void GetViewRectSize(int *w, int *h)
 
 void UpdateDimBoxes(HWND hwndDlg)
 {
-  // 判断窄窗口: 中间的"录制到剪贴板"按钮右边已超过"录制"按钮左边 -> 常规按钮放不下
-  bool narrow = false;
+  // 渐进式响应布局: 窗口变窄时按"录制到剪贴板->尺寸->帧率->插入->录制->停止"的物理顺序
+  // 逐个隐藏放不下的按钮; 一旦有按钮被隐藏, 右下角的 ☰ 控制按钮出现作兜底入口。
+  bool anyHidden = false;
+
+  // ☰ 控制按钮(最右, 右锚定)作为右边界基准
+  WDL_WndSizer__rec* recCtrl = g_wndsize.get_item(IDC_CTRL);
+  int leftmostRight = recCtrl ? recCtrl->last.left : 0x7fffffff;
+
+  // 右组按钮(右锚定): 停止/录制 任意状态可见, 插入仅暂停; 左移到几乎出界(left<4)时隐藏
   {
-    WDL_WndSizer__rec* recRec = g_wndsize.get_item(IDC_REC);
-    WDL_WndSizer__rec* recClip = g_wndsize.get_item(IDC_REC_CLIP);
-    if (recRec && recClip && recRec->last.left > 0 && recClip->last.right > recRec->last.left - 4)
-      narrow = true;
+    const unsigned short rid[] = { IDC_STOP, IDC_REC, IDC_INSERT };
+    const bool base[] = { true, true, (g_cap_state==2) };
+    for (int i=0; i<3; ++i)
+    {
+      HWND h = GetDlgItem(hwndDlg, rid[i]);
+      if (!base[i]) { if (h) ShowWindow(h, SW_HIDE); continue; }
+      WDL_WndSizer__rec* r = g_wndsize.get_item(rid[i]);
+      if (r && r->last.left > 0 && r->last.left < 4)
+      { anyHidden = true; if (h) ShowWindow(h, SW_HIDE); }
+      else
+      { if (h) ShowWindow(h, SW_SHOWNA); if (r && r->last.left < leftmostRight) leftmostRight = r->last.left; }
+    }
   }
 
-#ifdef _WIN32
-  // 窄窗口: 只显示 ☰ 控制按钮
-  { HWND h = GetDlgItem(hwndDlg, IDC_CTRL); if (h) ShowWindow(h, narrow ? SW_SHOWNA : SW_HIDE); }
-#endif
-
-  // 状态栏: 录制中(非暂停) 且 非窄
-  ShowWindow(GetDlgItem(hwndDlg, IDC_STATUS), (g_cap_state==1 && !narrow) ? SW_SHOWNA : SW_HIDE);
-
-  // 帧率/尺寸输入框 + 录制到剪贴板: 停止状态 且 非窄
+  // 左组(左锚定, 仅停止状态显示): 录制到剪贴板/帧率组/尺寸组; 被右组覆盖(right>基准)时隐藏
   {
-    static const unsigned short ids[] = { IDC_MAXFPS_LBL, IDC_MAXFPS, IDC_DIMLBL_1, IDC_XSZ, IDC_YSZ, IDC_DIMLBL, IDC_REC_CLIP };
-    const int show = (!g_cap_state && !narrow) ? SW_SHOWNA : SW_HIDE;
-    for (int i=0; i < (int)(sizeof(ids)/sizeof(ids[0])); ++i)
-    { HWND h = GetDlgItem(hwndDlg, ids[i]); if (h) ShowWindow(h, show); }
+    const unsigned short lid[] = { IDC_REC_CLIP, IDC_MAXFPS_LBL, IDC_MAXFPS, IDC_DIMLBL_1, IDC_XSZ, IDC_DIMLBL, IDC_YSZ };
+    for (int i=0; i<7; ++i)
+    {
+      HWND h = GetDlgItem(hwndDlg, lid[i]);
+      if (g_cap_state) { if (h) ShowWindow(h, SW_HIDE); continue; }
+      WDL_WndSizer__rec* r = g_wndsize.get_item(lid[i]);
+      if (r && r->last.right > leftmostRight - 4)
+      { anyHidden = true; if (h) ShowWindow(h, SW_HIDE); }
+      else { if (h) ShowWindow(h, SW_SHOWNA); }
+    }
   }
 
-  // 录制/停止按钮: 非窄即显示
-  {
-    const int show = narrow ? SW_HIDE : SW_SHOWNA;
-    ShowWindow(GetDlgItem(hwndDlg, IDC_REC), show);
-    ShowWindow(GetDlgItem(hwndDlg, IDC_STOP), show);
-  }
+  // 状态栏: 录制中 且 未发生隐藏(窄时让位给按钮/☰)
+  ShowWindow(GetDlgItem(hwndDlg, IDC_STATUS), (g_cap_state==1 && !anyHidden) ? SW_SHOWNA : SW_HIDE);
 
-  // 插入文本帧按钮: 暂停状态 且 非窄
-  ShowWindow(GetDlgItem(hwndDlg, IDC_INSERT), (g_cap_state==2 && !narrow) ? SW_SHOWNA : SW_HIDE);
+  // ☰ 控制按钮: 有任何按钮被隐藏时显示
+  { HWND h = GetDlgItem(hwndDlg, IDC_CTRL); if (h) ShowWindow(h, anyHidden ? SW_SHOWNA : SW_HIDE); }
 
   if (!g_cap_state)
   {
